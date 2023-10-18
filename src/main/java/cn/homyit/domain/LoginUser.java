@@ -1,10 +1,11 @@
 package cn.homyit.domain;
 
+import lombok.Data;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
-
+@Data
 public class LoginUser implements UserDetails {
     private User user;
     @Override

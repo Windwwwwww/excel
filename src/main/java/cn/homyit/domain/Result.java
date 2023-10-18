@@ -17,6 +17,11 @@ public class Result {
         this.message = message;
     }
 
-//    public static Result ok(String msg){return new Result(Code.LOGIN_OK, msg);}
+    public Result(Integer code, Object data) {
+        this.code = code;
+        this.data = data;
+    }
+
+    //    public static Result ok(String msg){return new Result(Code.LOGIN_OK, msg);}
 //    public static Result err(String msg){return new Result(Code.LOGIN_ERR,msg);}
 }

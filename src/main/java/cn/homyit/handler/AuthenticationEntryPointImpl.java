@@ -1,4 +1,4 @@
-package cn.homyit.hander;
+package cn.homyit.handler;
 
 import cn.homyit.utils.WebUtils;
 import cn.homyit.domain.Result;
