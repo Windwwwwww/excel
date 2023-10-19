@@ -7,12 +7,12 @@ import cn.homyit.domain.ExcelAdmin;
 import cn.homyit.domain.Result;
 import cn.homyit.domain.UserLink;
 import cn.homyit.dto.UserLinkDto;
+import cn.homyit.dto.UserLinkListDto;
 import cn.homyit.exception.SystemException;
 import cn.homyit.service.ExcelImportService;
 import cn.homyit.utils.BeanCopyUtils;
 import cn.homyit.utils.PinyinUtils;
 import cn.homyit.utils.RedisCache;
-//import cn.homyit.utils.SecurityUtils;
 import cn.homyit.utils.SecurityUtils;
 import cn.homyit.vo.ExcelListVo;
 import cn.hutool.core.date.DateTime;
@@ -113,8 +113,12 @@ public class ExcelImportImpl extends ServiceImpl<ExcelDao,ExcelAdmin> implements
     @Transactional(readOnly = false,rollbackFor = Exception.class)
     public Result sendOneLink(UserLinkDto userLinkDto) {
         String pattern="yyyy-MM-dd HH:mm:ss";
-        DateTime start= DateUtil.parse(userLinkDto.getStartTime(),pattern);
-        DateTime end=DateUtil.parse(userLinkDto.getEndTime(),pattern);
+        DateTime start=null;
+        DateTime end=null;
+        if(userLinkDto.getStartTime()!=null&&userLinkDto.getEndTime()!=null){
+            start= DateUtil.parse(userLinkDto.getStartTime(),pattern);
+            end=DateUtil.parse(userLinkDto.getEndTime(),pattern);
+        }
         String[] t= userLinkDto.getSaveName().split("\\.");
         String tempName=t[0];
         //生成链接格式为http://selfinfo/表名/userid
@@ -132,7 +136,7 @@ public class ExcelImportImpl extends ServiceImpl<ExcelDao,ExcelAdmin> implements
     public Result getExcelList() {
         LambdaQueryWrapper<ExcelAdmin> lambdaQueryWrapper=new LambdaQueryWrapper<>();
         lambdaQueryWrapper.eq(ExcelAdmin::getCreateId, SecurityUtils.getUserId());
-        //lambdaQueryWrapper.eq(ExcelAdmin::getCreateId,1);
+//        lambdaQueryWrapper.eq(ExcelAdmin::getCreateId,1);
 
         List<ExcelAdmin> excelAdminList= excelDao.selectList(lambdaQueryWrapper);
         List<ExcelListVo> excelListVos=excelAdminList.stream()
@@ -144,21 +148,26 @@ public class ExcelImportImpl extends ServiceImpl<ExcelDao,ExcelAdmin> implements
 
     @Override
     @Transactional(readOnly = false,rollbackFor = Exception.class)
-    public Result sendLinks(List<UserLinkDto> userLinkDtos) {
+    public Result sendLinks(UserLinkListDto userLinkDtos) {
         //TODO 记得做判空
-        String saveName=userLinkDtos.get(0).getSaveName();//文件名字肯定一样所以用第0个就行
         int sendBy= SecurityUtils.getUserId();
-        //int sendBy=1;
-
+//        int sendBy=1;
+        String saveName=userLinkDtos.getSaveName();
         String[] t=saveName.split("\\.");
         String tempName=t[0];
         String pattern="yyyy-MM-dd HH:mm:ss";
-
-        DateTime startTime=DateUtil.parse(userLinkDtos.get(0).getStartTime(),pattern);
-        DateTime endTime=DateUtil.parse(userLinkDtos.get(0).getEndTime(),pattern);
+        DateTime start;
+        DateTime end;
+        if(userLinkDtos.getStartTime()!=null&&userLinkDtos.getEndTime()!=null){
+            start= DateUtil.parse(userLinkDtos.getStartTime(),pattern);
+            end=DateUtil.parse(userLinkDtos.getEndTime(),pattern);
+        } else {
+            end = null;
+            start = null;//放到这里是因为下面的Lambda语句会报错
+        }
         StringBuilder s=new StringBuilder("https://selfinfo/").append(tempName).append("/");
-        List<UserLink> userLinks=userLinkDtos.stream()
-                .map(userLinkDto -> new UserLink(Integer.parseInt(userLinkDto.getUserId()),s.append(userLinkDto.getUserId()).toString(),sendBy,startTime,endTime))
+        List<UserLink> userLinks=userLinkDtos.getUserIdList().stream()
+                .map(userid -> new UserLink(Integer.parseInt(userid),s.append(userid).toString(),sendBy,start,end))
                 .collect(Collectors.toList());
         userLinks.stream()
                 .map(userLink -> userLinkDao.insert(userLink))
@@ -293,6 +302,9 @@ public class ExcelImportImpl extends ServiceImpl<ExcelDao,ExcelAdmin> implements
                 statement.addBatch();//将该行添加到批处理中
             }
             statement.executeBatch();
+        }catch(NullPointerException e){
+            e.printStackTrace();
+            throw new SystemException(Code.SYSTEM_ERR,"表格格式不合法,表头字段名不能为空");
         }
 
         workbook.close();

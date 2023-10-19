@@ -4,6 +4,7 @@ import cn.homyit.domain.ExcelAdmin;
 import cn.homyit.domain.Result;
 import cn.homyit.domain.UserLink;
 import cn.homyit.dto.UserLinkDto;
+import cn.homyit.dto.UserLinkListDto;
 import cn.hutool.core.date.DateTime;
 import com.baomidou.mybatisplus.extension.service.IService;
 import org.springframework.web.multipart.MultipartFile;
@@ -21,5 +22,5 @@ public interface ExcelImportService extends IService<ExcelAdmin>{
 
     Result getExcelList();
 
-    Result sendLinks(List<UserLinkDto> userLinkDtos);
+    Result sendLinks(UserLinkListDto userLinkListDtos);
 }

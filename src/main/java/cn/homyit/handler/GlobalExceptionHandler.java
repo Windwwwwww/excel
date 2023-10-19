@@ -26,4 +26,3 @@ public class GlobalExceptionHandler {
         return new Result(Code.SYSTEM_ERR,e.getMessage());
     }
 }
-

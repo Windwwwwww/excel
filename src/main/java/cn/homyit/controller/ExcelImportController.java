@@ -12,16 +12,21 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.validation.Valid;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/excel")
+@Validated
 @PreAuthorize("@AdminService.isAdmin()")
 public class ExcelImportController {
     @Autowired
@@ -31,11 +36,16 @@ public class ExcelImportController {
 
     @Autowired
     private ExcelDao excelDao;
-    @PostMapping("import")
+    @PostMapping("/import")
     public Result importExcel(@RequestParam("file")MultipartFile file, String startTime,String endTime) throws IOException, SQLException {
         String pattern = "yyyy-MM-dd HH:mm:ss";
-        DateTime start=DateUtil.parse(startTime,pattern);
-        DateTime end=DateUtil.parse(endTime,pattern);
+        DateTime start=null;
+        DateTime end=null;
+        if(startTime!=null&&endTime!=null) {
+            start = DateUtil.parse(startTime, pattern);
+            end = DateUtil.parse(endTime, pattern);
+        }
+
         String filename=file.getOriginalFilename();
         return excelImportService.generateDataTable(filename,file,start,end);
     }
@@ -51,14 +61,14 @@ public class ExcelImportController {
     }
 
     @PostMapping ("/sendOne")
-    public Result sendOneLink(@RequestBody UserLinkDto userLinkDto){
+    public Result sendOneLink(@RequestBody @Valid UserLinkDto userLinkDto, BindingResult bindingResult){
         return excelImportService.sendOneLink(userLinkDto);
 
     }
 
     @PostMapping("/sendLinks")
-    public Result sendLinks(@RequestBody UserLinkListDto userLinkDtos){
-        return excelImportService.sendLinks(userLinkDtos.getUserLinkDtos());
+    public Result sendLinks(@RequestBody @Valid UserLinkListDto userLinkDtos,BindingResult  bindingResult){
+        return excelImportService.sendLinks(userLinkDtos);
 
     }
 
